@@ -1,19 +1,23 @@
-"use client";
+"use client"
 import Loading from "@components/Loading";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [productForm, setProductForm] = useState({});
+  const [productForm, setProductForm] = useState({
+    slug: "",
+    quantity: "",
+    price: "",
+  });
   const [products, setProducts] = useState([]);
   const [dropdown, setDropdown] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fecthData();
+    fetchData();
   }, []);
 
-  const fecthData = async () => {
+  const fetchData = async () => {
     try {
       const response = await fetch("/api/products", {
         method: "GET",
@@ -22,14 +26,13 @@ export default function Home() {
         },
       });
       if (response.ok) {
-        // console.log("product added successfully.")
         const data = await response.json();
         setProducts(data.Products);
       } else {
-        console.log("Error in adding product.");
+        console.error("Error in fetching products.");
       }
     } catch (error) {
-      console.log("error:", error);
+      console.error("Error:", error);
     }
   };
 
@@ -47,60 +50,81 @@ export default function Home() {
         body: JSON.stringify(productForm),
       });
       if (response.ok) {
-        console.log("product added successfully.");
-        setProductForm({});
-        fecthData();
+        console.log("Product added successfully.");
+        setProductForm({ slug: "", quantity: "", price: "" });
+        fetchData();
       } else {
-        console.log("Error in adding product.");
+        console.error("Error in adding product.");
       }
     } catch (error) {
-      console.log("erroe:", error);
+      console.error("Error:", error);
     }
   };
 
   const onDropDown = async (e) => {
-    setQuery(e.target.value);
+    const queryValue = e.target.value;
+    setQuery(queryValue);
     if (!loading) {
-      setDropdown([]);
       setLoading(true);
       try {
-        const response = await fetch(`/api/search?query=${query}`, {
+        const response = await fetch(`/api/search?query=${queryValue}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
         });
         if (response.ok) {
-          // console.log("product added successfully.")
           const data = await response.json();
           setDropdown(data.Products);
         } else {
-          console.log("Error in adding product.");
+          console.error("Error in searching products.");
         }
       } catch (error) {
-        console.log("error:", error);
+        console.error("Error:", error);
       } finally {
         setLoading(false);
       }
     }
   };
 
+  const ButtonAction = async (action, item, currentQuantity) => {
+    try {
+      // Calculate the new quantity based on the action
+      const newQuantity = action === "add" ? parseInt(currentQuantity) + 1 : parseInt(currentQuantity) - 1;
+  
+      const response = await fetch("/api/action", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({itemId:item, newQuantity }),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+      } else {
+        console.error("Error in adding product.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+  
+
   return (
     <div className="container mx-auto">
-      {/* search */}
-      <section className="text-gray-600 body-font mb-12">
+      {/* Search */}
+      <section className="text-gray-600 body-font">
         <div className="container px-5 py-2 mx-auto">
-          <div className="flex flex-col text-center w-full ">
+          <div className="flex flex-col text-center w-full">
             <h1 className="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">
               Search A Product
             </h1>
           </div>
           <div className="flex lg:w-2/3 w-full sm:flex-row flex-col mx-auto px-8 sm:space-x-4 sm:space-y-0 space-y-4 sm:px-0 items-end">
             <div className="relative flex-grow w-full">
-              <label
-                htmlFor="product-name"
-                className="leading-7 text-sm text-gray-600"
-              >
+              <label htmlFor="product-name" className="leading-7 text-sm text-gray-600">
                 Product Name
               </label>
               <input
@@ -108,51 +132,77 @@ export default function Home() {
                 id="product-name"
                 name="product-name"
                 onChange={onDropDown}
+                value={query}
                 className="w-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-transparent focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               />
             </div>
             <div className="relative flex-grow w-full">
-              <label
-                htmlFor="product-name"
-                className="leading-7 text-sm text-gray-600"
-              >
-                Product Name
+              <label htmlFor="product-category" className="leading-7 text-sm text-gray-600">
+                Product Category
               </label>
               <select
-                type="text"
-                id="product-name"
-                name="product-name"
+                id="product-category"
+                name="product-category"
                 className="w-full h-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-transparent focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               >
                 <option value="">All</option>
-                <option value="">All</option>
-                <option value="">All</option>
+                {/* Add your product categories here */}
               </select>
-            </div>
-          </div>
-          <div className="drop_container w-full ">
-            <div className="absolute">
-              {!loading ? (
-                <>
-                  {dropdown.map((item) => (
-                    <div className="flex  w-full flex-row lg:w-2/3  w-full mx-auto sm:space-x-4 sm:space-y-0 px-8 space-y-4 bg-red-300 justify-between ">
-                      <sapn className="slug">{item.slug}</sapn>
-                      <span className="quantity">{item.quantity}</span>
-                      <span className="price">{item.price}</span>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <div className="flex lg:w-2/3 w-full flex-row  mx-auto px-8 sm:space-x-4 sm:space-y-0 space-y-4 justify-center">
-                  <Loading />
-                </div>
-              )}
             </div>
           </div>
         </div>
       </section>
+
+      {/* Display Search Results */}
+      {dropdown.length > 0 && (
+        <div className="container mx-auto">
+          <section className="text-gray-600 body-font absolute w-full" style={{ zIndex: "1" }}>
+            <div className="container px-5">
+              {!loading ? (
+                <div className="lg:w-2/3 w-full mx-auto overflow-auto bg-red">
+                  <table className="table-auto w-full text-left whitespace-no-wrap bg-red-100">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-3 title-font tracking-wider font-medium text-gray-900 text-sm bg-gray-100 rounded-tl rounded-bl">
+                          Product Name
+                        </th>
+                        <th className="px-4 py-3 title-font tracking-wider font-medium text-gray-900 text-sm bg-gray-100">
+                          Add
+                        </th>
+                        <th className="px-4 py-3 title-font tracking-wider font-medium text-gray-900 text-sm bg-gray-100">
+                          Quantity
+                        </th>
+                        <th className="px-4 py-3 title-font tracking-wider font-medium text-gray-900 text-sm bg-gray-100">
+                          Remove
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dropdown.map((item) => (
+                        <tr className="border border-black" key={item._id}>
+                          <td className="px-4 py-3">
+                            {item.slug} {item.quantity} available for ₹{item.price}
+                          </td>
+                          <td onClick={()=>{ButtonAction("minus", item.slug, item.quantity)}} className="px-4 py-3 bg-purple-300 text-center rounded-xxl">-</td>
+                          <td className="px-4 text-center py-3">{item.quantity}</td>
+                          <td onClick={()=>{ButtonAction("add", item.slug, item.quantity)}} className="px-4 bg-purple-300 text-center rounded-xxl py-3">+</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex lg:w-2/3 w-full flex-row mx-auto px-8 sm:space-x-4 sm:space-y-0 space-y-4 justify-center">
+                  <Loading />
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+      
       {/* Product input */}
-      <section className="text-gray-600 body-font mb-12">
+      <section className="text-gray-600 body-font my-12">
         <div className="container px-5 py-2 mx-auto">
           <div className="flex flex-col text-center w-full ">
             <h1 className="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">
