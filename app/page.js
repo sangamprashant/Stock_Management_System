@@ -1,63 +1,94 @@
-"use client"
+"use client";
+import Loading from "@components/Loading";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [productForm, setProductForm]=useState({})
-  const [products,setProducts] = useState([]);
+  const [productForm, setProductForm] = useState({});
+  const [products, setProducts] = useState([]);
+  const [dropdown, setDropdown] = useState([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(()=>{
+  useEffect(() => {
     fecthData();
-  },[])
+  }, []);
 
   const fecthData = async () => {
     try {
-      const response = await fetch("/api/products",{
-        method:"GET",
-        headers:{
-          'Content-Type' :'application/json'
+      const response = await fetch("/api/products", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
       });
-      if(response.ok){
+      if (response.ok) {
         // console.log("product added successfully.")
         const data = await response.json();
-        setProducts(data.Products)
-      }else{
-        console.log("Error in adding product.")
+        setProducts(data.Products);
+      } else {
+        console.log("Error in adding product.");
       }
     } catch (error) {
-      console.log("error:",error)
+      console.log("error:", error);
     }
-  }
+  };
 
-  const handleInput = (e) =>{
-    setProductForm({...productForm,[e.target.name]:e.target.value})
-  }
-  
+  const handleInput = (e) => {
+    setProductForm({ ...productForm, [e.target.name]: e.target.value });
+  };
+
   const handelAdd = async () => {
     try {
-      const response = await fetch("/api/products",{
-        method:"POST",
-        headers:{
-          'Content-Type' :'application/json'
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(productForm)
+        body: JSON.stringify(productForm),
       });
-      if(response.ok){
+      if (response.ok) {
         console.log("product added successfully.");
-        setProductForm({})
+        setProductForm({});
         fecthData();
-      }else{
-        console.log("Error in adding product.")
+      } else {
+        console.log("Error in adding product.");
       }
     } catch (error) {
-      console.log("erroe:",error)
+      console.log("erroe:", error);
     }
-  }
+  };
+
+  const onDropDown = async (e) => {
+    setQuery(e.target.value);
+    if (!loading) {
+      setDropdown([]);
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/search?query=${query}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          // console.log("product added successfully.")
+          const data = await response.json();
+          setDropdown(data.Products);
+        } else {
+          console.log("Error in adding product.");
+        }
+      } catch (error) {
+        console.log("error:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="container mx-auto">
-    {/* search */}
-   <section className="text-gray-600 body-font mb-12">
+      {/* search */}
+      <section className="text-gray-600 body-font mb-12">
         <div className="container px-5 py-2 mx-auto">
           <div className="flex flex-col text-center w-full ">
             <h1 className="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">
@@ -66,38 +97,61 @@ export default function Home() {
           </div>
           <div className="flex lg:w-2/3 w-full sm:flex-row flex-col mx-auto px-8 sm:space-x-4 sm:space-y-0 space-y-4 sm:px-0 items-end">
             <div className="relative flex-grow w-full">
-              <label htmlFor="product-name" className="leading-7 text-sm text-gray-600">
+              <label
+                htmlFor="product-name"
+                className="leading-7 text-sm text-gray-600"
+              >
                 Product Name
               </label>
               <input
                 type="text"
                 id="product-name"
                 name="product-name"
+                onChange={onDropDown}
                 className="w-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-transparent focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               />
             </div>
             <div className="relative flex-grow w-full">
-              <label htmlFor="product-name" className="leading-7 text-sm text-gray-600">
+              <label
+                htmlFor="product-name"
+                className="leading-7 text-sm text-gray-600"
+              >
                 Product Name
               </label>
               <select
                 type="text"
                 id="product-name"
                 name="product-name"
-                className="w-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-transparent focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                className="w-full h-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-transparent focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               >
                 <option value="">All</option>
                 <option value="">All</option>
                 <option value="">All</option>
               </select>
             </div>
-            <button className="text-white bg-indigo-500 border-0 py-2 px-8 focus:outline-none hover:bg-indigo-600 rounded text-lg">
-              Button
-            </button>
+          </div>
+          <div className="drop_container w-full ">
+            <div className="absolute">
+              {!loading ? (
+                <>
+                  {dropdown.map((item) => (
+                    <div className="flex  w-full flex-row lg:w-2/3  w-full mx-auto sm:space-x-4 sm:space-y-0 px-8 space-y-4 bg-red-300 justify-between ">
+                      <sapn className="slug">{item.slug}</sapn>
+                      <span className="quantity">{item.quantity}</span>
+                      <span className="price">{item.price}</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="flex lg:w-2/3 w-full flex-row  mx-auto px-8 sm:space-x-4 sm:space-y-0 space-y-4 justify-center">
+                  <Loading />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
-    {/* Product input */}
+      {/* Product input */}
       <section className="text-gray-600 body-font mb-12">
         <div className="container px-5 py-2 mx-auto">
           <div className="flex flex-col text-center w-full ">
@@ -107,7 +161,13 @@ export default function Home() {
           </div>
           <div className="flex lg:w-2/3 w-full sm:flex-row flex-col mx-auto px-8 sm:space-x-4 sm:space-y-0 space-y-4 sm:px-0 items-end">
             <div className="relative flex-grow w-full">
-              <label htmlFor="product-name" className="leading-7 text-sm text-gray-600"> Product Slug</label>
+              <label
+                htmlFor="product-name"
+                className="leading-7 text-sm text-gray-600"
+              >
+                {" "}
+                Product Slug
+              </label>
               <input
                 type="text"
                 id="product-name"
@@ -118,7 +178,12 @@ export default function Home() {
               />
             </div>
             <div className="relative flex-grow w-full">
-              <label htmlFor="quantity" className="leading-7 text-sm text-gray-600">Quantity</label>
+              <label
+                htmlFor="quantity"
+                className="leading-7 text-sm text-gray-600"
+              >
+                Quantity
+              </label>
               <input
                 type="text"
                 id="quantity"
@@ -129,7 +194,12 @@ export default function Home() {
               />
             </div>
             <div className="relative flex-grow w-full">
-              <label htmlFor="price" className="leading-7 text-sm text-gray-600">Price</label>
+              <label
+                htmlFor="price"
+                className="leading-7 text-sm text-gray-600"
+              >
+                Price
+              </label>
               <input
                 type="price"
                 onChange={handleInput}
@@ -139,7 +209,10 @@ export default function Home() {
                 className="w-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-transparent focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               />
             </div>
-            <button onClick={handelAdd} className="text-white bg-indigo-500 border-0 py-2 px-8 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+            <button
+              onClick={handelAdd}
+              className="text-white bg-indigo-500 border-0 py-2 px-8 focus:outline-none hover:bg-indigo-600 rounded text-lg"
+            >
               Button
             </button>
           </div>
@@ -170,11 +243,13 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {products.map(product =>(<tr key={product._id}>
-                  <td className="px-4 py-3">{product.slug}</td>
-                  <td className="px-4 py-3">{product.quantity}</td>
-                  <td className="px-4 py-3">₹{product.price}</td>
-                </tr>))}
+                {products.map((product) => (
+                  <tr key={product._id}>
+                    <td className="px-4 py-3">{product.slug}</td>
+                    <td className="px-4 py-3">{product.quantity}</td>
+                    <td className="px-4 py-3">₹{product.price}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
